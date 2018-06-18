@@ -50,15 +50,15 @@ public final class Validator<T> {
     }
 
     
-    public Validator<T> testing (Predicate<T> condition, Supplier<String> errorMessage) {
+    public Validator<T> checking(Predicate<T> condition, Supplier<String> errorMessage) {
         if(!condition.test(validatedObject)){
             THROWABLES.add(new IllegalStateException(errorMessage.get()));
         }
         return this;
     }
     
-    public <U> Validator<T> testing (Function<T,U> projection, Predicate<U> condition, Supplier<String> errorMessage) {
-       return Validator.this.testing(projection.andThen(condition::test)::apply, errorMessage);
+    public <U> Validator<T> checking(Function<T,U> projection, Predicate<U> condition, Supplier<String> errorMessage) {
+       return Validator.this.checking(projection.andThen(condition::test)::apply, errorMessage);
     }
     
     

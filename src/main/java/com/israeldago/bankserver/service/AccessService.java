@@ -71,8 +71,8 @@ public class AccessService implements AccessCalls {
             DAO<AppUserDB> userDAO = DAO.of(AppUserDB.class, () -> entityManager);
             DAO<RoleDB> roleDAO = DAO.of(RoleDB.class, () -> entityManager);
             Validator.of(userDTO.toAppUserDB())
-                    .testing(user -> user != null, () -> "User cannot be null for registration")
-                    .testing(AppUserDB::getIdentityCardNumber, cardNumber -> !isPersisted(userDAO, cardNumber), () -> "User already exist in Database")
+                    .checking(user -> user != null, () -> "User cannot be null for registration")
+                    .checking(AppUserDB::getIdentityCardNumber, cardNumber -> !isPersisted(userDAO, cardNumber), () -> "User already exist in Database")
                     .whenCompletedAccept(userValidated -> userDAO.persist(setOrPersistRoleName(roleDAO, userValidated)), th -> {throw new RuntimeException(th);});
             entityManager.getTransaction().commit();
             return isPersisted(userDAO, userDTO.getIdentityCardNumber());
@@ -86,7 +86,7 @@ public class AccessService implements AccessCalls {
                 DAO<AppUserDB> userDAO = DAO.of(AppUserDB.class, () -> entityManager);
                 Optional<AppUserDB> optionalUser = userDAO.findByQueryWithOneParam("AppUserDB.findByUsername", "username", givenUsername);
                 return Validator.of(optionalUser.orElseThrow(() -> new RuntimeException("Wrong Username - cannot find this user with the given username")))
-                        .testing(AppUserDB::getPassword, password -> password.equals(givenPassword), () -> "Wrong Password")
+                        .checking(AppUserDB::getPassword, password -> password.equals(givenPassword), () -> "Wrong Password")
                         .whenCompletedApply(AppUserDB::toAppUserDTO, Throwable::printStackTrace);
             });
         });

@@ -83,9 +83,9 @@ public class BankingService implements BankingCalls {
             DAO<AppUserDB> userDAO = DAO.of(AppUserDB.class, () -> entityManager);
             DAO<AccountDB> accountDAO = DAO.of(AccountDB.class, () -> entityManager);
             Validator.of(accountDAO.findOne(accountId).orElseThrow(() -> new RuntimeException("Cannot find any account with the given accountID param")))
-                     .testing(AccountDB::getCurrentSold, currentSold -> currentSold == 0d , () -> "Cannot process this operation -> the target account still have money")
-                     .testing(givenAccountDB -> userDAO.findOne(holderId).isPresent(), () -> "Cannot find any user with the given accountHolder ID : "+ holderId)
-                     .testing(AccountDB::getHolderId, givenHolderId -> holderId.equals(givenHolderId), () -> "Given user does not hold this account")
+                     .checking(AccountDB::getCurrentSold, currentSold -> currentSold == 0d , () -> "Cannot process this operation -> the target account still have money")
+                     .checking(givenAccountDB -> userDAO.findOne(holderId).isPresent(), () -> "Cannot find any user with the given accountHolder ID : "+ holderId)
+                     .checking(AccountDB::getHolderId, givenHolderId -> holderId.equals(givenHolderId), () -> "Given user does not hold this account")
                      .whenCompletedAccept(accountDAO::remove, Throwable::printStackTrace);
             entityManager.getTransaction().commit();
             return !accountDAO.findOne(accountId).isPresent();
@@ -118,7 +118,7 @@ public class BankingService implements BankingCalls {
     private ResponseDTO depositOperation(Supplier<Double> amount, Supplier<Integer> depositAccountId, EntityManagerFactory emf) {
         return applyEntityManagerTransactionally(emf, entityManager -> {
             Validator.of(amount.get())
-                     .testing(givenAmount -> givenAmount > 0d , () -> "Cannot make a deposit with a negative amount or amount == 0$")
+                     .checking(givenAmount -> givenAmount > 0d , () -> "Cannot make a deposit with a negative amount or amount == 0$")
                      .validate();
             DAO<AccountDB> accountDAO = DAO.of(AccountDB.class, () -> entityManager);
             AccountDB targetAccountDB = accountDAO.findOne(depositAccountId.get()).orElseThrow(() -> new RuntimeException("Cannot find any account with the given accountID param"));
@@ -131,11 +131,11 @@ public class BankingService implements BankingCalls {
     private ResponseDTO withDrawOperation(Supplier<Double> amount, Supplier<Integer> withdrawAccountId, EntityManagerFactory emf) {
         return applyEntityManagerTransactionally(emf, entityManager -> {
             Validator.of(amount.get())
-                     .testing(givenAmount -> givenAmount > 0d , () -> "Cannot make a withdraw with a negative amount or amount == 0$")
+                     .checking(givenAmount -> givenAmount > 0d , () -> "Cannot make a withdraw with a negative amount or amount == 0$")
                      .validate();
             DAO<AccountDB> accountDAO = DAO.of(AccountDB.class, () -> entityManager);
             Validator.of(accountDAO.findOne(withdrawAccountId.get()).orElseThrow(() -> new RuntimeException("Cannot find any account with the given accountID param")))
-                     .testing(AccountDB::getCurrentSold, currentSold -> currentSold > amount.get() , () -> "insufficient funds to process this operation")
+                     .checking(AccountDB::getCurrentSold, currentSold -> currentSold > amount.get() , () -> "insufficient funds to process this operation")
                      .whenCompletedAccept(givenAccountDB -> givenAccountDB.setCurrentSold(givenAccountDB.getCurrentSold() - amount.get()), Throwable::printStackTrace);
             entityManager.getTransaction().commit();
             return ResponseDTO.builder().taskStatus(Boolean.TRUE).message("WithDraw Operation Successfull").build();
@@ -153,8 +153,8 @@ public class BankingService implements BankingCalls {
     private AppUserDB validateUser(Integer userId, DAO<AppUserDB> userDAO) {
         Optional<AppUserDB> optionalUser = userDAO.findOne(userId);
         return Validator.of(optionalUser.orElseThrow(() -> new RuntimeException("Cannot find any user with the given ID")))
-                .testing(user -> user.getRole().getRoleName(), "ADMIN"::equalsIgnoreCase, () -> "Only Admins can call the createNewAccountForUser Method")
-                //more testing cases here if needed
+                .checking(user -> user.getRole().getRoleName(), "ADMIN"::equalsIgnoreCase, () -> "Only Admins can call the createNewAccountForUser Method")
+                //more checking cases here if needed
                 .validate();
     }
 }
